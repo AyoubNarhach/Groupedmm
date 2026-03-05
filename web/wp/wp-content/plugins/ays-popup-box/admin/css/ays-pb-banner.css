@@ -1,0 +1,201 @@
+/* pb and Fox LMS integration main page 2025 | Start */
+
+#ays-pb-fox-lms-all-pages-popup {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    z-index: 100000;
+}
+
+#ays-pb-fox-lms-all-pages-popup-main {
+    width: 480px;
+    height: 350px;
+    font-size: 20px;
+    color: white;
+    position: relative;
+
+    background: #FFFFFF;
+    border: 1px solid #9E9E9E;
+    box-shadow: 0px 4px 18px rgba(167, 167, 167, 0.4);
+    border-radius: 16px;
+}
+
+.ays-pb-fox-lms-all-pages-popup-fields-submit {
+    color: #ffffff;
+    cursor: pointer;
+    font-size: 16px;
+    text-decoration: none;
+    display: inline-block;
+    border: 0;
+    outline: none;
+    padding: 14px 10px;
+    text-transform: capitalize;
+    font-weight: bolder;
+    background-color: #FF5004;
+    box-shadow: 0px 2px 4px rgba(101, 101, 101, 0.25);
+    border-radius: 10px;
+    transition: 0.3s;
+}
+
+a.ays-pb-fox-lms-all-pages-popup-fields-submit:focus,
+a.ays-pb-fox-lms-all-pages-popup-fields-submit:hover {
+    color: #ffffff;
+    background-color: #FF783D;
+    text-decoration: none;
+    box-shadow: 0px 2px 4px rgba(101, 101, 101, 0.25);
+}
+
+a.ays-pb-fox-lms-all-pages-popup-fields-submit:active {
+    color: #ffffff;
+    background-color: #D64202;
+    text-decoration: none;
+    box-shadow: 0px 2px 4px rgba(101, 101, 101, 0.25);
+}
+
+.ays-pb-fox-lms-all-pages-popup-layer {
+    text-align: center;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-direction: column;
+    height: inherit;
+    gap: 20px;
+}
+
+#ays-pb-fox-lms-all-pages-popup-close-main {
+    display: flex;
+    justify-content: flex-end;
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    background-color: transparent;
+    border-radius: 50%;
+    z-index: 10;
+}
+
+#ays-pb-fox-lms-all-pages-popup-close {
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    background: transparent;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+#ays-pb-fox-lms-all-pages-popup-close > div {
+    line-height: 24px;
+    color: #323232;
+    font-size: 32px;
+}
+
+.ays-pb-fox-lms-all-pages-popup-dismiss-ad-button {
+    font-size: 12px;
+    color: #f3d7e5;
+}
+
+a.ays-pb-fox-lms-all-pages-popup-dismiss-ad-button:hover {
+    color: #f3d7e5;
+    text-decoration: none;
+}
+
+div#ays-pb-fox-lms-all-pages-popup-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+}
+
+.ays-pb-fox-lms-all-pages-popup-heading-center {
+    position: relative;
+}
+
+#ays-pb-fox-lms-all-pages-popup .ays-pb-fox-lms-all-pages-popup-heading-center img.ays-pb-fox-lms-all-pages-icon {
+    position: absolute;
+    bottom: -30px;
+    right: 0px;
+}
+
+.ays-pb-fox-lms-all-pages-popup-heading-center {
+    width: 100%;
+}
+
+.ays-pb-fox-lms-all-pages-popup-heading-center a {
+    display: inline-block;
+}
+
+#ays-pb-fox-lms-all-pages-popup-heading-title {
+    margin-top: 10px;
+}
+
+#ays-pb-fox-lms-all-pages-popup-heading-title a {
+    font-style: normal;
+    font-weight: 700;
+    font-size: 18px;
+    line-height: 21px;
+    text-align: center;
+    letter-spacing: 0.05em;
+    color: #323232;
+}
+
+.ays-pb-fox-lms-all-pages-popup-heading-title {
+    position: absolute;
+    right: 10px;
+    top: 5px;
+    color: #fff;
+    letter-spacing: 7px;
+    font-weight: bolder;
+    font-style: normal;
+    text-transform: uppercase;
+    font-size: 17px;
+}
+
+div#ays-pb-fox-lms-all-pages-popup-content {
+    padding: 0 20px 15px;
+}
+
+.ays-pb-fox-lms-all-pages-popup-content-title {
+    font-style: normal;
+    font-weight: 700;
+    font-size: 24px;
+    line-height: 21px;
+    letter-spacing: 0.2em;
+    color: #98FBA6;
+    text-transform: uppercase;
+}
+
+.ays-pb-fox-lms-all-pages-popup-content-description {
+    font-style: normal;
+    font-weight: 400;
+    font-size: 14px;
+    color: #494949;
+    letter-spacing: 0;
+}
+
+@media screen and (max-width: 768px) {
+    #ays-pb-fox-lms-all-pages-popup {
+        max-width: 100%;
+    }
+
+    #ays-pb-fox-lms-all-pages-popup .ays-pb-fox-lms-all-pages-popup-heading-center img{
+        max-width: 90%;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    #ays-pb-fox-lms-all-pages-popup-main {
+        max-width: 100%;
+        background-size: cover;
+    }
+}
+
+@media screen and (max-width: 450px) {
+    #ays-pb-fox-lms-all-pages-popup-close-main {
+        left: 0px;
+        top: 0px;
+    }
+}
+
+/* pb and Fox LMS integration main page 2025 | End */

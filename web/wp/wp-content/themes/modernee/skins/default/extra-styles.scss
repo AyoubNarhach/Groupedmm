@@ -1,0 +1,310 @@
+@import "../../css/_mixins.scss";
+@import "../../css/_theme-vars.scss";
+@import "css/_skin-vars.scss";
+
+/* UL in icons */
+.sc_icons_item_description ul {
+	color: var(--theme-color-text_dark);
+}
+
+/* MC4WP Style 1 */
+#style-1.ultra.mc4wp-form label {
+	color: var(--theme-color-text_dark);
+}
+#style-1.ultra.mc4wp-form input[type="checkbox"] + label:before {
+	border-color: var(--theme-color-text_dark) !important;
+}
+
+/* Hover */
+.sc_cover:hover + .elementor-container .num-hover, 
+.sc_cover:hover + .elementor-container .num-hover * {
+    color: var(--theme-color-text_link2);
+}
+.sc_cover:hover + [class*="elementor-"] .divider-hover .elementor-divider-separator, 
+.divider-hover:hover .elementor-divider-separator {
+    border-color: var(--theme-color-text_link2) !important;
+}
+
+/* Price Metro */
+.sc_price_metro .sc_price_item_description ul li:before, 
+.sc_price_metro .sc_price_item_details ul li:before {
+	color: var(--theme-color-alter_link2);
+}
+
+/* Price Shadow */
+.sc_price_simple_shadow .sc_price_item.sc_price_active .sc_price_item_link {
+	border-color: var(--theme-color-text_link2) !important;
+	background-color: var(--theme-color-text_link2) !important;
+	box-shadow: 0 7px 25px var(--theme-color-text_link2_02);
+}
+.sc_price_simple_shadow .sc_price_item:hover .sc_price_item_link {
+	border-color: var(--theme-color-text_link2) !important;
+	background-color: var(--theme-color-text_link2) !important;
+	box-shadow: 0 7px 25px var(--theme-color-text_link2_02);
+}
+.sc_price_simple_shadow .sc_price_item .sc_price_item_link:hover,
+.sc_price_simple_shadow .sc_price_item .sc_price_item_link:focus {
+	border-color: var(--theme-color-text_hover2) !important;
+	background-color: var(--theme-color-text_hover2) !important;
+	box-shadow: 0 7px 25px var(--theme-color-text_link2_02);
+}
+.sc_price_simple_shadow .sc_price_item:hover .sc_price_item_price {
+	color: var(--theme-color-alter_link2);
+}
+
+/* Wooc Filter */
+.woocommerce .widget_price_filter .ui-slider .ui-slider-range, 
+.woocommerce .widget_price_filter .ui-slider .ui-slider-handle {
+	background-color: var(--theme-color-text_link);
+}
+
+/* Icon Card */
+.sc_icons_card .sc_icons_item {
+	border: none;
+}
+
+/* Single Team */
+.team_page_wrap_info:before {
+	background-color: var(--theme-color-alter_bg_hover);
+}  
+
+/* Team Hover */
+.sc_team_hover .post_featured .trx_addons_hover_mask {
+	background: var(--theme-color-text_link);
+	background: -moz-linear-gradient(0deg, var(--theme-color-text_link_085) 0%, rgba(0, 0, 0, 0) 100%);
+	background: -webkit-linear-gradient(0deg, var(--theme-color-text_link_085) 0%, rgba(0, 0, 0, 0) 100%);
+	background: linear-gradient(0deg, var(--theme-color-text_link_085) 0%, rgba(0, 0, 0, 0) 100%);
+}
+
+/* Pagination Style Title */
+.slider_pagination_style_title .slider_pagination_wrap .slider_pagination_bullet {
+	color: var(--theme-color-text_dark);
+}
+.slider_pagination_style_title .slider_pagination_wrap .slider_pagination_bullet.slider_pagination_bullet_active {
+	color: var(--theme-color-text_link);
+}
+
+/* Testimonials Hover */
+.sc_testimonials_hover {
+	.sc_testimonials_item:hover {
+		background-color: var(--theme-color-text_link);
+	}
+	&.color_style_link2 {
+		.sc_testimonials_item:hover {
+			background-color: var(--theme-color-text_link2);
+		}
+	}
+	&.color_style_link3 {
+		.sc_testimonials_item:hover {
+			background-color: var(--theme-color-text_link3);
+		}
+	}
+}
+
+/* Insta */
+.widget_instagram_images_item,
+#sb_instagram .sbi_photo {
+	@include border-radius(14px);
+}
+
+/* Skills Modern */
+.sc_skills_counter_modern .sc_skills_total {
+	color: var(--theme-color-alter_bg_hover);
+}
+
+/* Cart Short */
+.sc_layouts_cart_items_short {
+	background-color: var(--theme-color-text_link2);
+	color: var(--theme-color-inverse_link);
+}
+
+/* Gradient Animation */
+.trx_addons_bg_text .gradient_animation {
+	color: var(--theme-color-text_link);
+	background: linear-gradient(45deg, var(--theme-color-text), var(--theme-color-text_055));
+	background-clip: text;
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-size: 200% 100%;
+	animation: gradient_anim 5s ease infinite reverse;
+	padding-bottom: 0.1em;
+}
+/* Title */
+.sc_title .sc_item_title_text .gradient_animation {
+	color: var(--theme-color-text_link);
+	background: linear-gradient(45deg, var(--theme-color-text), var(--theme-color-text_055));
+	background-clip: text;
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-size: 200% 100%;
+	animation: gradient_anim 5s ease infinite reverse;
+	padding-bottom: 0.1em;
+}
+/* Elementor Heading */
+.elementor-widget-heading .elementor-heading-title .gradient_animation {
+	color: var(--theme-color-text_link);
+	background: linear-gradient(45deg, var(--theme-color-text), var(--theme-color-text_055));
+	background-clip: text;
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-size: 200% 100%;
+	animation: gradient_anim 5s ease infinite reverse;
+	padding-bottom: 0.1em;
+}
+@-webkit-keyframes gradient_anim {
+    0% {
+		background-position: 0 0;
+	}
+    50% {
+		background-position: 100% 0;
+    }
+	100% {
+		background-position: 0 0;
+    }
+}
+@keyframes gradient_anim {
+    0% {
+		background-position: 0 0;
+	}
+    50% {
+		background-position: 100% 0;
+    }
+	100% {
+		background-position: 0 0;
+    }
+}
+
+/* Lists */
+ul[class*="trx_addons_list"].accent_2 > li:before {
+    color: var(--theme-color-text_link2);
+}
+
+
+/* 404 */
+.post_item_404 .post_content {
+	text-align: center;
+}
+.post_item_404 .page_title {
+    display: inline;
+	color: var(--theme-color-bg_color);
+	background-image:url(images/404-back.png);
+	background-repeat: no-repeat;
+	background-size: cover;
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+}
+.post_item_404 .post_content .all-svg {
+	display: none;
+}
+
+/* Footer Socials */
+.sc_socials.sc_socials_default.modern .socials_wrap .social_item .social_icon {
+	background-color: var(--theme-color-alter_bg_hover) !important;
+}
+.sc_socials.sc_socials_default.modern .socials_wrap .social_item:hover .social_icon {
+	background-color: var(--theme-color-alter_bg_hover) !important;
+}
+
+/* Disable Box shadow for BTN */
+.post_item_404 .go_home,
+.comments_wrap .form-submit input[type="submit"],
+.wpcf7 .wpcf7-submit,
+.adp-popup-type-notification-box .adp-popup-button,
+.adp-popup-type-notification-bar .adp-popup-button {
+	@include box-shadow(none);
+}
+
+.sc_services_modern.sc_services_modern {
+	.sc_services_item:hover .sc_button_arrow,
+	.sc_services_item .sc_button_arrow:hover {
+		@include box-shadow(none);
+	}
+}
+
+.sc_item_pagination_load_more,
+.nav-links-more,
+.woocommerce-links-more {
+	.nav-links,
+	.nav-load-more,
+	.woocommerce-load-more {
+		@include box-shadow(none);
+	}
+}
+
+#style-4.mc4wp-form {
+	.mc4wp-form-fields button,
+	.mc4wp-form-fields input[type="submit"] {
+		@include box-shadow(none !important);
+	}
+}
+
+.sc_price_item .sc_price_item_link {
+	@include box-shadow(none !important);
+}
+
+button[disabled],
+input[type="submit"][disabled],
+input[type="button"][disabled],
+a.sc_button[disabled],
+a.theme_button[disabled],
+button[disabled]:hover,
+input[type="submit"][disabled]:hover,
+input[type="button"][disabled]:hover,
+a.sc_button[disabled]:hover,
+a.theme_button[disabled]:hover {
+	@include box-shadow(none);
+}
+
+.woocommerce #respond input#submit.disabled,
+.woocommerce #respond input#submit:disabled,
+.woocommerce #respond input#submit[disabled]:disabled,
+.woocommerce a.button.disabled,
+.woocommerce a.button:disabled,
+.woocommerce a.button[disabled]:disabled,
+.woocommerce button.button.disabled,
+.woocommerce button.button:disabled,
+.woocommerce button.button[disabled]:disabled,
+.woocommerce input.button.disabled,
+.woocommerce input.button:disabled,
+.woocommerce input.button[disabled]:disabled,
+.woocommerce #respond input#submit.disabled:hover,
+.woocommerce #respond input#submit:disabled:hover,
+.woocommerce #respond input#submit[disabled]:disabled:hover,
+.woocommerce a.button.disabled:hover,
+.woocommerce a.button:disabled:hover,
+.woocommerce a.button[disabled]:disabled:hover,
+.woocommerce button.button.disabled:hover,
+.woocommerce button.button:disabled:hover,
+.woocommerce button.button[disabled]:disabled:hover,
+.woocommerce input.button.disabled:hover,
+.woocommerce input.button:disabled:hover,
+.woocommerce input.button[disabled]:disabled:hover {
+	@include box-shadow(none !important);
+}
+
+.woocommerce .woocommerce-cart-form table.shop_table .woo-actions-inner .button.continue_shopping,
+.woocommerce .woocommerce-cart-form table.shop_table .woo-actions-inner button.button,
+.woocommerce .widget_shopping_cart .buttons a,
+.woocommerce.widget_shopping_cart .buttons a,
+.woocommerce .widget_price_filter .price_slider_amount .button,
+.woocommerce #btn-buy,
+.tinv-wishlist .tinvwl_added_to_wishlist.tinv-modal button,
+.woocommerce #respond input#submit,
+.woocommerce .button, .woocommerce-page .button,
+.woocommerce a.button,
+.woocommerce button.button,
+.woocommerce input.button,
+.woocommerce input[type="button"], .woocommerce-page input[type="button"],
+.woocommerce input[type="submit"], .woocommerce-page input[type="submit"],
+.woocommerce ul.products li.product .button,
+.woocommerce div.product form.cart .button,
+.woocommerce #review_form #respond p.form-submit input[type="submit"],
+.woocommerce-page #review_form #respond p.form-submit input[type="submit"],
+.woocommerce table.my_account_orders .order-actions .button,
+.woocommerce table.cart td.actions .button,
+#add_payment_method .wc-proceed-to-checkout a.checkout-button,
+.woocommerce-cart .wc-proceed-to-checkout a.checkout-button,
+.woocommerce-checkout .wc-proceed-to-checkout a.checkout-button,
+.yith-woocompare-widget a.clear-all {
+	@include box-shadow(none);
+}

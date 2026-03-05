@@ -1,0 +1,6 @@
+LOGIN="groupedmm"
+SERVER="server.lajungle.biz"
+REMOTEDIR="./codedev/"
+EXCLUDE="rsync_exclude.txt"
+LOCALDIR="./"
+OPTIONS="-arvp"
