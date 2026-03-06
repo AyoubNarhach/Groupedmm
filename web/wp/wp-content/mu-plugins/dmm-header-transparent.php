@@ -4,6 +4,18 @@
  * Description: Header transparent at page top, solid black when scrolled.
  */
 
+add_action( 'wp_head', function () {
+    ?>
+    <style id="dmm-header-zindex">
+        /* Garantit que le header sticky est toujours au-dessus du contenu de page */
+        .elementor-element-26b0e58.elementor-sticky,
+        .elementor-element-26b0e58.elementor-sticky--active {
+            z-index: 9999 !important;
+        }
+    </style>
+    <?php
+} );
+
 add_action( 'wp_footer', function () {
     ?>
     <script>
