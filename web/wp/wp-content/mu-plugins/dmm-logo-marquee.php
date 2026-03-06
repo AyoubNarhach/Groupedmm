@@ -4,11 +4,10 @@
  * Description: Animation continue des logos + section inclinée plein écran.
  */
 
-/* ── CSS ─────────────────────────────────────────────────────────────── */
+/* ── CSS : section inclinée plein écran ─────────────────────────────── */
 add_action( 'wp_head', function () { ?>
 <style>
 body { overflow-x: hidden !important; }
-
 .incline2 {
     margin-left:  -50vw !important;
     margin-right: -50vw !important;
@@ -18,98 +17,49 @@ body { overflow-x: hidden !important; }
     padding-right: 50vw !important;
     max-width:    none !important;
 }
-
-.dmm-marquee-wrap {
-    overflow: hidden;
-    width: 100%;
-}
-.dmm-marquee-track {
-    display: flex;
-    width: max-content;
-    animation: dmm-scroll linear infinite;
-}
-@keyframes dmm-scroll {
-    from { transform: translateX(0); }
-    to   { transform: translateX(-50%); }
-}
-.dmm-marquee-track .swiper-slide {
-    flex-shrink: 0;
-    padding: 0 24px;
-}
-.dmm-marquee-track img {
-    height: 70px !important;
-    width: auto !important;
-    object-fit: contain !important;
-}
 </style>
 <?php }, 5 );
 
-/* ── JS ─────────────────────────────────────────────────────────────── */
+/* ── JS : forcer Swiper en défilement continu ────────────────────────── */
 add_action( 'wp_footer', function () { ?>
 <script>
 (function () {
-    function init(slider) {
-        if (slider.dataset.dmmDone) return;
-
-        /* Attend que Swiper soit vraiment prêt */
+    function fix(slider) {
+        if (slider.dataset.dmmFixed) return;
         if (!slider.classList.contains('swiper-initialized')) return;
+        var sw = slider.swiper;
+        if (!sw) return;
 
-        slider.dataset.dmmDone = '1';
+        slider.dataset.dmmFixed = '1';
 
-        /* Slides originaux uniquement (pas les clones Swiper) */
-        var slides = Array.from(slider.querySelectorAll('.swiper-slide:not(.swiper-slide-duplicate)'));
-        if (!slides.length) { delete slider.dataset.dmmDone; return; }
+        /* Défilement continu : délai 0, vitesse de transition douce */
+        sw.params.loop                          = true;
+        sw.params.speed                         = 4000;
+        sw.params.autoplay                      = sw.params.autoplay || {};
+        sw.params.autoplay.delay                = 0;
+        sw.params.autoplay.disableOnInteraction = false;
+        sw.params.autoplay.pauseOnMouseEnter    = false;
 
-        /* Force le chargement des images lazy (Swiper lazy / srcset) */
-        slides.forEach(function (s) {
-            s.querySelectorAll('img').forEach(function (img) {
-                ['data-lazy', 'data-src', 'data-lazy-src'].forEach(function (attr) {
-                    if (img.getAttribute(attr)) img.src = img.getAttribute(attr);
-                });
-                img.loading = 'eager';
-            });
-        });
-
-        /* Détruit Swiper sur l'élément racine */
-        if (slider.swiper) {
-            try { slider.swiper.destroy(true, true); } catch (e) {}
-        }
-
-        /* Construit le track : 2 copies pour le loop seamless */
-        var track = document.createElement('div');
-        track.className = 'dmm-marquee-track';
-        [0, 1].forEach(function () {
-            slides.forEach(function (s) { track.appendChild(s.cloneNode(true)); });
-        });
-
-        /* Remplace seulement le swiper-wrapper, garde le reste intact */
-        var wrapper = slider.querySelector('.swiper-wrapper');
-        if (wrapper) {
-            wrapper.parentNode.replaceChild(track, wrapper);
-        } else {
-            slider.innerHTML = '';
-            slider.appendChild(track);
-        }
-
-        slider.style.overflow = 'hidden';
-
-        /* Durée calculée après rendu */
-        requestAnimationFrame(function () {
-            requestAnimationFrame(function () {
-                var w = track.scrollWidth / 2;
-                if (w > 50) track.style.animationDuration = (w / 80) + 's';
-            });
-        });
+        try { sw.loopDestroy(); sw.loopCreate(); } catch (e) {}
+        sw.update();
+        sw.autoplay.start();
     }
 
     function scan() {
-        document.querySelectorAll('.elementskit-clients-slider.swiper-initialized').forEach(init);
+        document.querySelectorAll('.elementskit-clients-slider').forEach(fix);
     }
 
-    var t = setInterval(function () { scan(); }, 400);
+    /* Polling jusqu'à init Swiper */
+    var t = setInterval(scan, 300);
     setTimeout(function () { clearInterval(t); }, 15000);
 
-    new MutationObserver(scan).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+    /* Relance autoplay si jamais il s'arrête */
+    setInterval(function () {
+        document.querySelectorAll('.elementskit-clients-slider').forEach(function (slider) {
+            var sw = slider.swiper;
+            if (sw && sw.autoplay && !sw.autoplay.running) sw.autoplay.start();
+        });
+    }, 1000);
 })();
 </script>
 <?php }, 20 );
