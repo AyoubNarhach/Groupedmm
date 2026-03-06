@@ -10,10 +10,10 @@ add_action( 'wp_head', function () {
         /* === Logos : hauteur uniforme === */
         .elementskit-clients-slider .content-image img,
         .elementskit-clients-slider .single-client img {
-            height: 55px !important;
+            height: 80px !important;
             width: auto !important;
-            max-height: 55px !important;
-            max-width: 160px !important;
+            max-height: 80px !important;
+            max-width: 200px !important;
             object-fit: contain !important;
         }
 
@@ -91,7 +91,9 @@ add_action( 'wp_footer', function () {
             if (!el || el === document.body) return;
 
             // Calculer l'extension nécessaire selon le skew
-            var extra = 120; // valeur sécurisée par défaut
+            // On prend au moins 50vw pour couvrir n'importe quel angle
+            var vw = window.innerWidth || document.documentElement.clientWidth || 1440;
+            var extra = Math.round(vw * 0.5); // 50vw garanti
             var cs = window.getComputedStyle(el);
             var t = cs.transform || '';
             if (t && t !== 'none') {
@@ -100,7 +102,8 @@ add_action( 'wp_footer', function () {
                     var v = m[1].split(',').map(parseFloat);
                     var h = el.offsetHeight;
                     // b = tan(skewY), c = tan(skewX)
-                    extra = Math.ceil(Math.max(Math.abs(v[1]), Math.abs(v[2])) * h) + 60;
+                    var calculated = Math.ceil(Math.max(Math.abs(v[1]), Math.abs(v[2])) * h) + 80;
+                    extra = Math.max(extra, calculated);
                 }
             }
 
@@ -111,8 +114,17 @@ add_action( 'wp_footer', function () {
             el.style.setProperty('padding-left',  extra + 'px', 'important');
             el.style.setProperty('padding-right', extra + 'px', 'important');
 
-            if (el.parentElement) {
-                el.parentElement.style.overflow = 'hidden';
+            // Masquer le débordement sur TOUS les ancêtres jusqu'au body
+            var parent = el.parentElement;
+            while (parent && parent !== document.body) {
+                var pos = window.getComputedStyle(parent).position;
+                // Seulement sur les éléments positionnés ou la section Elementor
+                if (pos === 'relative' || pos === 'absolute' || pos === 'fixed' ||
+                    parent.classList.contains('e-con') ||
+                    parent.classList.contains('elementor-section')) {
+                    parent.style.overflow = 'hidden';
+                }
+                parent = parent.parentElement;
             }
         }
 
