@@ -62,3 +62,9 @@ html.scheme_dark body {
     background-image: none !important;
 }
 
+/* Header transparent au sommet, fond sombre au scroll */
+.she-header-yes:not(.she-header) {
+    background-color: transparent !important;
+    background: transparent !important;
+}
+
