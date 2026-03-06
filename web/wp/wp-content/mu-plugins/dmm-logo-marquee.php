@@ -1,18 +1,15 @@
 <?php
 /**
  * Plugin Name: DMM Logo Marquee Fix
- * Description: Corrige le bandeau logos : (1) fond blanc plein écran, (2) défilement continu sans saut, (3) logos taille uniforme.
+ * Description: Corrige le bandeau logos ElementsKit : (1) fond blanc plein écran, (2) défilement continu sans saut, (3) logos taille uniforme.
  */
 
-/**
- * CSS : taille uniforme des logos
- */
 add_action( 'wp_head', function () {
     ?>
     <style id="dmm-marquee-css">
         /* === Logos : hauteur uniforme === */
-        .trx-addons-marquee-item-image img,
-        .trx-addons-marquee-item-gallery img {
+        .elementskit-clients-slider .content-image img,
+        .elementskit-clients-slider .single-client img {
             height: 55px !important;
             width: auto !important;
             max-height: 55px !important;
@@ -20,32 +17,37 @@ add_action( 'wp_head', function () {
             object-fit: contain !important;
         }
 
-        /* === Conteneur du marquee réécrit par notre JS === */
-        .trx-addons-marquee-wrap.dmm-marquee-ready {
+        /* === Marquee CSS (remplace Swiper) === */
+        .elementskit-clients-slider.dmm-marquee-ready {
             overflow: hidden !important;
-            display: block !important;
-            white-space: nowrap !important;
             width: 100% !important;
         }
-        .dmm-marquee-inner {
-            display: inline-flex !important;
+        .elementskit-clients-slider.dmm-marquee-ready .ekit-main-swiper {
+            overflow: hidden !important;
+            width: 100% !important;
+        }
+        .dmm-marquee-track {
+            display: flex !important;
             flex-wrap: nowrap !important;
             align-items: center !important;
             width: max-content !important;
-            white-space: nowrap !important;
         }
         .dmm-marquee-set {
-            display: inline-flex !important;
+            display: flex !important;
             flex-wrap: nowrap !important;
             align-items: center !important;
+        }
+        .dmm-slide-item {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 20px;
         }
     </style>
     <?php
 }, 5 );
 
-/**
- * JS : animation continue + correction du fond
- */
 add_action( 'wp_footer', function () {
     ?>
     <script id="dmm-marquee-js">
@@ -53,150 +55,166 @@ add_action( 'wp_footer', function () {
         'use strict';
 
         /* ─────────────────────────────────────────────
-         * 1. Correction du fond blanc : étendre la section
-         *    parent skewée pour couvrir toute la largeur
+         * 1. Correction du fond incliné : étendre la section
+         *    parente skewée pour couvrir toute la largeur
          * ───────────────────────────────────────────── */
-        function fixSkewedParent(marqueeWrap) {
-            var el = marqueeWrap.parentElement;
-            var depth = 0;
-            while (el && el !== document.body && depth++ < 8) {
-                var cs = window.getComputedStyle(el);
-                var transform = cs.transform || cs.webkitTransform || '';
-                var hasSkew = false;
+        function fixInclinedBg(sliderEl) {
+            // Cherche d'abord la section avec classe incline*
+            var el = null;
+            if (sliderEl.closest) {
+                el = sliderEl.closest('.incline2') ||
+                     sliderEl.closest('.incline1') ||
+                     sliderEl.closest('[class*="incline"]');
+            }
 
-                // Détecter un skew via la matrix CSS
-                if (transform && transform !== 'none' && transform.indexOf('matrix') === 0) {
-                    // matrix(a, b, c, d, tx, ty) — b ou c non nuls = skew
-                    var m = transform.match(/matrix\(([^)]+)\)/);
-                    if (m) {
-                        var vals = m[1].split(',').map(parseFloat);
-                        // vals[1]=b (skewY contribution), vals[2]=c (skewX contribution)
-                        if (Math.abs(vals[1]) > 0.01 || Math.abs(vals[2]) > 0.01) {
-                            hasSkew = true;
+            // Sinon, cherche un ancêtre avec un transform skew
+            if (!el) {
+                var cur = sliderEl.parentElement;
+                var depth = 0;
+                while (cur && cur !== document.body && depth++ < 12) {
+                    var cs = window.getComputedStyle(cur);
+                    var t = cs.transform || '';
+                    if (t && t !== 'none') {
+                        var m = t.match(/matrix\(([^)]+)\)/);
+                        if (m) {
+                            var v = m[1].split(',').map(parseFloat);
+                            if (Math.abs(v[1]) > 0.01 || Math.abs(v[2]) > 0.01) {
+                                el = cur;
+                                break;
+                            }
                         }
                     }
+                    cur = cur.parentElement;
                 }
-                // Détecter un skew dans le style inline direct
-                if (!hasSkew && el.style.transform && /skew/i.test(el.style.transform)) {
-                    hasSkew = true;
-                }
-
-                if (hasSkew) {
-                    // Calculer l'extension nécessaire pour couvrir les coins
-                    var h = el.offsetHeight;
-                    var angle = 0;
-                    if (transform.indexOf('matrix') === 0) {
-                        var mVals = transform.match(/matrix\(([^)]+)\)/)[1].split(',').map(parseFloat);
-                        // L'angle de skewY est Math.atan(b) en radians
-                        angle = Math.atan(Math.abs(mVals[1]));
-                    }
-                    var extra = Math.ceil(Math.abs(Math.tan(angle)) * h) + 40;
-                    el.style.setProperty('margin-left', '-' + extra + 'px', 'important');
-                    el.style.setProperty('margin-right', '-' + extra + 'px', 'important');
-                    el.style.setProperty('width', 'calc(100% + ' + (extra * 2) + 'px)', 'important');
-                    // S'assurer que le parent masque le débordement
-                    if (el.parentElement) {
-                        el.parentElement.style.overflow = 'hidden';
-                    }
-                    return true;
-                }
-                el = el.parentElement;
             }
-            return false;
+
+            if (!el || el === document.body) return;
+
+            // Calculer l'extension nécessaire selon le skew
+            var extra = 120; // valeur sécurisée par défaut
+            var cs = window.getComputedStyle(el);
+            var t = cs.transform || '';
+            if (t && t !== 'none') {
+                var m = t.match(/matrix\(([^)]+)\)/);
+                if (m) {
+                    var v = m[1].split(',').map(parseFloat);
+                    var h = el.offsetHeight;
+                    // b = tan(skewY), c = tan(skewX)
+                    extra = Math.ceil(Math.max(Math.abs(v[1]), Math.abs(v[2])) * h) + 60;
+                }
+            }
+
+            el.style.setProperty('margin-left',  '-' + extra + 'px', 'important');
+            el.style.setProperty('margin-right', '-' + extra + 'px', 'important');
+            el.style.setProperty('width', 'calc(100% + ' + (extra * 2) + 'px)', 'important');
+            el.style.setProperty('box-sizing', 'border-box', 'important');
+            el.style.setProperty('padding-left',  extra + 'px', 'important');
+            el.style.setProperty('padding-right', extra + 'px', 'important');
+
+            if (el.parentElement) {
+                el.parentElement.style.overflow = 'hidden';
+            }
         }
 
         /* ─────────────────────────────────────────────
-         * 2. Animation CSS continue et seamless
-         *    Remplace le TweenMax (qui crée un saut visible)
-         *    par une animation CSS à boucle infinie.
-         *
-         *    Principe : dupliquer le contenu (2x) dans un
-         *    inner flex container, puis animer translateX
-         *    de 0% à -50% en boucle → les deux copies se
-         *    suivent sans interruption.
+         * 2. Remplace le Swiper par une animation CSS
+         *    continue et sans saut (2 copies du contenu
+         *    → translateX 0% à -50% en boucle infinie)
          * ───────────────────────────────────────────── */
-        function makeContinuous(wrap) {
-            if (wrap.classList.contains('dmm-marquee-ready')) return;
+        function makeMarquee(sliderEl) {
+            if (sliderEl.classList.contains('dmm-marquee-ready')) return;
 
-            var $w = jQuery(wrap);
-            var $elements = $w.find('.trx_addons_marquee_element');
-            if ($elements.length === 0) return;
+            var swiperEl = sliderEl.querySelector('.ekit-main-swiper');
+            if (!swiperEl) return;
 
-            // ── Récupérer le HTML du premier bloc (les logos originaux)
-            var $first = $elements.eq(0);
-            var logoHTML = $first.html();
+            // Récupérer uniquement les slides originaux (sans les duplicatas Swiper)
+            var originalSlides = Array.from(
+                sliderEl.querySelectorAll('.swiper-slide:not(.swiper-slide-duplicate)')
+            );
+            if (originalSlides.length === 0) return;
 
-            // ── Tuer tous les tweens TweenMax
-            if (typeof TweenMax !== 'undefined') {
-                $elements.each(function () {
-                    try { TweenMax.killTweensOf(this); } catch (e) {}
-                });
+            // Détruire l'instance Swiper
+            if (swiperEl.swiper) {
+                try { swiperEl.swiper.destroy(true, true); } catch (e) {}
             }
 
-            // ── Vider le wrap et reconstruire avec 2 copies
-            $elements.remove();
+            // Construire le track avec 2 copies pour boucle seamless
+            var track = document.createElement('div');
+            track.className = 'dmm-marquee-track';
 
-            var $inner = jQuery('<div class="dmm-marquee-inner" aria-hidden="true"></div>');
-            var $s1 = jQuery('<div class="dmm-marquee-set"></div>').html(logoHTML);
-            var $s2 = jQuery('<div class="dmm-marquee-set"></div>').html(logoHTML);
-            $inner.append($s1).append($s2);
-            $w.append($inner);
+            for (var copy = 0; copy < 2; copy++) {
+                var set = document.createElement('div');
+                set.className = 'dmm-marquee-set';
+                originalSlides.forEach(function (slide) {
+                    var item = document.createElement('div');
+                    item.className = 'dmm-slide-item';
+                    var inner = slide.querySelector('.swiper-slide-inner');
+                    if (inner) {
+                        item.innerHTML = inner.innerHTML;
+                    }
+                    set.appendChild(item);
+                });
+                track.appendChild(set);
+            }
 
-            wrap.classList.add('dmm-marquee-ready');
+            // Remplacer le contenu Swiper
+            swiperEl.innerHTML = '';
+            swiperEl.appendChild(track);
+            swiperEl.style.overflow = 'hidden';
+            swiperEl.style.width = '100%';
 
-            // ── Lire direction & vitesse depuis data-marquee
-            var data = $w.data('marquee') || {};
-            var speed = parseInt(data.speed, 10) || 5;
-            var dir   = (parseInt(data.dir, 10) || -1) < 0 ? '-' : '';
+            sliderEl.classList.add('dmm-marquee-ready');
 
-            // ── Calculer la durée après que le rendu ait eu lieu
+            // Calculer la durée après rendu réel du DOM
             requestAnimationFrame(function () {
                 requestAnimationFrame(function () {
-                    var setWidth = $s1[0].scrollWidth || 2000;
+                    var set1 = track.querySelector('.dmm-marquee-set');
+                    var setWidth = set1 ? set1.scrollWidth : 2000;
+                    if (!setWidth || setWidth < 100) setWidth = 2000;
 
-                    // Pixels par seconde proportionnel à la vitesse Elementor
-                    var pxPerSec = 30 + speed * 20;
-                    var duration = (setWidth / pxPerSec).toFixed(2);
-
-                    // Nom unique pour les keyframes (évite les conflits)
-                    var kfName = 'dmmMqLoop' + Date.now();
-                    var style  = document.createElement('style');
+                    // Keyframes uniques pour éviter les conflits
+                    var kfName = 'dmmEkitLoop' + Date.now();
+                    var style = document.createElement('style');
                     style.textContent =
                         '@keyframes ' + kfName + ' {' +
                         '  from { transform: translateX(0); }' +
-                        '  to   { transform: translateX(' + dir + '50%); }' +
+                        '  to   { transform: translateX(-50%); }' +
                         '}';
                     document.head.appendChild(style);
 
-                    $inner[0].style.animation =
-                        kfName + ' ' + duration + 's linear infinite';
+                    // Vitesse ~80 px/s — naturelle pour un bandeau logos
+                    var duration = (setWidth / 80).toFixed(2);
+                    track.style.animation = kfName + ' ' + duration + 's linear infinite';
 
-                    // ── Fix du fond incliné (après rebuild DOM)
-                    fixSkewedParent(wrap);
+                    // Corriger le fond incliné après reconstruction du DOM
+                    fixInclinedBg(sliderEl);
                 });
             });
         }
 
         /* ─────────────────────────────────────────────
-         * Surveillance : déclencher dès que trx_addons
-         * initialise un marquee (classe trx-addons-marquee-inited)
+         * Surveillance : déclencher dès que le Swiper
+         * ElementsKit est initialisé
          * ───────────────────────────────────────────── */
         function scanAndFix() {
             document.querySelectorAll(
-                '.trx-addons-marquee-wrap.trx-addons-marquee-inited:not(.dmm-marquee-ready)'
+                '.elementskit-clients-slider:not(.dmm-marquee-ready)'
             ).forEach(function (el) {
-                makeContinuous(el);
+                // Attendre que Swiper ait créé les classes swiper-initialized
+                if (el.querySelector('.swiper-initialized')) {
+                    makeMarquee(el);
+                }
             });
         }
 
-        // Poll pendant 15 secondes (max 30 tentatives toutes les 500ms)
+        // Polling pendant 20s max
         var attempts = 0;
         var poll = setInterval(function () {
             scanAndFix();
-            if (++attempts >= 30) clearInterval(poll);
+            if (++attempts >= 40) clearInterval(poll);
         }, 500);
 
-        // Observer les changements de classe (cas Elementor lazy-load)
+        // Observer les changements de classe (Elementor lazy-load)
         new MutationObserver(function () {
             scanAndFix();
         }).observe(document.body, {
