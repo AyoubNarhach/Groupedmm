@@ -50,57 +50,66 @@ add_action( 'wp_footer', function () { ?>
 (function () {
     function init(slider) {
         if (slider.dataset.dmmDone) return;
+
+        /* Attend que Swiper soit vraiment prêt */
+        if (!slider.classList.contains('swiper-initialized')) return;
+
         slider.dataset.dmmDone = '1';
 
-        /* Récupère les slides originaux (sans les clones Swiper) */
+        /* Slides originaux uniquement (pas les clones Swiper) */
         var slides = Array.from(slider.querySelectorAll('.swiper-slide:not(.swiper-slide-duplicate)'));
         if (!slides.length) { delete slider.dataset.dmmDone; return; }
 
-        /* Détruit Swiper */
-        var swiperEl = slider.querySelector('.ekit-main-swiper, .swiper-container');
-        if (swiperEl && swiperEl.swiper) {
-            try { swiperEl.swiper.destroy(true, true); } catch(e) {}
-        }
-
-        /* Construit le conteneur marquee */
-        var wrap = document.createElement('div');
-        wrap.className = 'dmm-marquee-wrap';
-
-        var track = document.createElement('div');
-        track.className = 'dmm-marquee-track';
-
-        /* 2 copies identiques pour le loop CSS seamless */
-        [0, 1].forEach(function () {
-            slides.forEach(function (s) {
-                var clone = s.cloneNode(true);
-                track.appendChild(clone);
+        /* Force le chargement des images lazy (Swiper lazy / srcset) */
+        slides.forEach(function (s) {
+            s.querySelectorAll('img').forEach(function (img) {
+                ['data-lazy', 'data-src', 'data-lazy-src'].forEach(function (attr) {
+                    if (img.getAttribute(attr)) img.src = img.getAttribute(attr);
+                });
+                img.loading = 'eager';
             });
         });
 
-        wrap.appendChild(track);
-        slider.innerHTML = '';
-        slider.appendChild(wrap);
+        /* Détruit Swiper sur l'élément racine */
+        if (slider.swiper) {
+            try { slider.swiper.destroy(true, true); } catch (e) {}
+        }
 
-        /* Calcule la durée en fonction de la largeur d'une copie */
+        /* Construit le track : 2 copies pour le loop seamless */
+        var track = document.createElement('div');
+        track.className = 'dmm-marquee-track';
+        [0, 1].forEach(function () {
+            slides.forEach(function (s) { track.appendChild(s.cloneNode(true)); });
+        });
+
+        /* Remplace seulement le swiper-wrapper, garde le reste intact */
+        var wrapper = slider.querySelector('.swiper-wrapper');
+        if (wrapper) {
+            wrapper.parentNode.replaceChild(track, wrapper);
+        } else {
+            slider.innerHTML = '';
+            slider.appendChild(track);
+        }
+
+        slider.style.overflow = 'hidden';
+
+        /* Durée calculée après rendu */
         requestAnimationFrame(function () {
-            var w = track.scrollWidth / 2;
-            track.style.animationDuration = (w / 80) + 's';
+            requestAnimationFrame(function () {
+                var w = track.scrollWidth / 2;
+                if (w > 50) track.style.animationDuration = (w / 80) + 's';
+            });
         });
     }
 
     function scan() {
-        document.querySelectorAll('.elementskit-clients-slider').forEach(function (el) {
-            /* Attend que Swiper soit initialisé */
-            if (el.querySelector('.swiper-initialized, .swiper-slide')) init(el);
-        });
+        document.querySelectorAll('.elementskit-clients-slider.swiper-initialized').forEach(init);
     }
 
-    /* Polling léger jusqu'à init réussie */
     var t = setInterval(function () { scan(); }, 400);
     setTimeout(function () { clearInterval(t); }, 15000);
 
-    /* Observe aussi les changements de DOM (lazy load) */
-    new MutationObserver(scan).observe(document.body, { childList: true, subtree: true });
+    new MutationObserver(scan).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
 })();
 </script>
 <?php }, 20 );
