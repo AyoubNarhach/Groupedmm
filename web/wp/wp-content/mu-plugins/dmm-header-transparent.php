@@ -4,34 +4,59 @@
  * Description: Header transparent at page top, solid black when scrolled.
  */
 
-add_action( 'wp_head', function () {
+add_action( 'wp_footer', function () {
     ?>
-    <style id="dmm-header-transparent">
-        /*
-         * DMM Header:
-         * - Transparent au sommet de la page (classe .header = pas encore scrollé)
-         * - Fond noir #000 quand scrollé (classe .she-header = sticky actif)
-         *
-         * Le plugin "Sticky Header Effects for Elementor" bascule entre
-         * .header (top) et .she-header (scrollé) sur .she-header-yes
-         */
+    <script>
+    (function () {
+        'use strict';
 
-        /* Au top : transparent, toutes les couches Elementor et Modernee */
-        .she-header-yes:not(.she-header),
-        .she-header-yes.header,
-        .she-header-yes.header .elementor-section,
-        .she-header-yes.header .e-con,
-        .top_panel .sc_layouts_row:not(.sc_layouts_row_fixed_on),
-        body:not(.trx_addons_page_scrolled) .top_panel {
-            background-color: transparent !important;
-            background-image: none !important;
+        function dmmInitHeader() {
+            // Selectionne le header (top_panel = Modernee, .she-header-yes = SHE plugin)
+            var header = document.querySelector('header.top_panel, .she-header-yes');
+            if (!header) return;
+
+            function setTransparent() {
+                header.style.setProperty('background-color', 'transparent', 'important');
+                header.style.setProperty('background-image', 'none', 'important');
+                // Aussi les sections Elementor internes
+                var sections = header.querySelectorAll('.elementor-section, .e-con');
+                sections.forEach(function(el) {
+                    el.style.setProperty('background-color', 'transparent', 'important');
+                    el.style.setProperty('background-image', 'none', 'important');
+                });
+            }
+
+            function setSolidBlack() {
+                header.style.setProperty('background-color', '#000000', 'important');
+                // Les sections internes peuvent rester transparentes (le header porte la couleur)
+                var sections = header.querySelectorAll('.elementor-section, .e-con');
+                sections.forEach(function(el) {
+                    el.style.removeProperty('background-color');
+                    el.style.removeProperty('background-image');
+                });
+            }
+
+            function onScroll() {
+                if (window.pageYOffset > 10) {
+                    setSolidBlack();
+                } else {
+                    setTransparent();
+                }
+            }
+
+            // Appliquer immédiatement
+            onScroll();
+
+            // Écouter le scroll
+            window.addEventListener('scroll', onScroll, { passive: true });
         }
 
-        /* Quand scrollé : fond noir solide */
-        .she-header-yes.she-header,
-        .sc_layouts_row_fixed_on {
-            background-color: #000000 !important;
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', dmmInitHeader);
+        } else {
+            dmmInitHeader();
         }
-    </style>
+    })();
+    </script>
     <?php
 } );
