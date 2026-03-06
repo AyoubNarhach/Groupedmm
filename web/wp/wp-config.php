@@ -85,7 +85,14 @@ $table_prefix = 'dmm_';
  *
  * @link https://developer.wordpress.org/advanced-administration/debug/debug-wordpress/
  */
-define( 'WP_DEBUG', false );
+define( 'WP_DEBUG', true );
+define( 'WP_DEBUG_LOG', true );
+define( 'WP_DEBUG_DISPLAY', false );
+
+/* Augmenter la mémoire pour Elementor */
+@ini_set( 'memory_limit', '512M' );
+define( 'WP_MEMORY_LIMIT', '512M' );
+define( 'WP_MAX_MEMORY_LIMIT', '512M' );
 
 /* Add any custom values between this line and the "stop editing" line. */
 
