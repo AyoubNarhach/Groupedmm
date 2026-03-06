@@ -7,7 +7,26 @@
 add_action( 'wp_head', function () {
     ?>
     <style id="dmm-marquee-css">
-        /* === Logos : hauteur uniforme === */
+
+        /* ── Empêche le scroll horizontal causé par l'extension ── */
+        body { overflow-x: hidden !important; }
+
+        /* ── Extension plein écran de la section inclinée ──
+         * margin négatif + padding compensatoire = fond couvre tout
+         * le viewport sans réduire la zone de contenu.
+         * box-sizing:border-box garantit que la largeur inclut le padding.
+         */
+        .incline2 {
+            margin-left:  -40vw !important;
+            margin-right: -40vw !important;
+            width:        calc(100% + 80vw) !important;
+            box-sizing:   border-box !important;
+            padding-left:  40vw !important;
+            padding-right: 40vw !important;
+            max-width:    none !important;
+        }
+
+        /* ── Logos : hauteur uniforme ── */
         .elementskit-clients-slider .content-image img,
         .elementskit-clients-slider .single-client img {
             height: 80px !important;
@@ -17,7 +36,7 @@ add_action( 'wp_head', function () {
             object-fit: contain !important;
         }
 
-        /* === Marquee CSS (remplace Swiper) === */
+        /* ── Marquee CSS (remplace Swiper) ── */
         .elementskit-clients-slider.dmm-marquee-ready {
             overflow: hidden !important;
             width: 100% !important;
@@ -55,74 +74,55 @@ add_action( 'wp_footer', function () {
         'use strict';
 
         /* ─────────────────────────────────────────────
-         * 1. Correction du fond incliné : étendre la section
-         *    parente skewée pour couvrir toute la largeur
+         * Fix clip-path si la section inclinée en utilise un
+         * (en plus du CSS, on étend le polygon pour qu'il couvre
+         * la nouvelle largeur étendue)
          * ───────────────────────────────────────────── */
-        function fixInclinedBg(sliderEl) {
-            // Cherche d'abord la section avec classe incline*
-            var el = null;
-            if (sliderEl.closest) {
-                el = sliderEl.closest('.incline2') ||
-                     sliderEl.closest('.incline1') ||
-                     sliderEl.closest('[class*="incline"]');
-            }
+        function fixClipPath(sliderEl) {
+            var el = sliderEl.closest ? sliderEl.closest('.incline2') : null;
+            if (!el) return;
 
-            // Sinon, cherche un ancêtre avec un transform skew
-            if (!el) {
-                var cur = sliderEl.parentElement;
-                var depth = 0;
-                while (cur && cur !== document.body && depth++ < 12) {
-                    var cs = window.getComputedStyle(cur);
-                    var t = cs.transform || '';
-                    if (t && t !== 'none') {
-                        var m = t.match(/matrix\(([^)]+)\)/);
-                        if (m) {
-                            var v = m[1].split(',').map(parseFloat);
-                            if (Math.abs(v[1]) > 0.01 || Math.abs(v[2]) > 0.01) {
-                                el = cur;
-                                break;
-                            }
-                        }
+            var cs      = window.getComputedStyle(el);
+            var clip    = cs.clipPath || cs.webkitClipPath || 'none';
+            if (!clip || clip === 'none' || clip.indexOf('polygon') === -1) return;
+
+            // Le polygon utilise probablement des % → il scale avec la largeur étendue.
+            // Mais si les X sont en pixels résolus, il faut les étendre manuellement.
+            var vw    = window.innerWidth || 1440;
+            var extra = Math.round(vw * 0.4);
+
+            var m = clip.match(/polygon\((.+)\)/);
+            if (!m) return;
+
+            // Séparer les points (chaque point = "X Y" séparé par une virgule)
+            var points = m[1].split(',').map(function (p) { return p.trim(); });
+            var changed = false;
+            var newPoints = points.map(function (p) {
+                // Chaque point : premier token = X, reste = Y
+                var parts = p.match(/^(\S+)\s+(.+)$/);
+                if (!parts) return p;
+                var x = parts[1], y = parts[2];
+
+                // Si X est en pixels et proche de 0 → étendre à gauche
+                if (/^-?[\d.]+px$/.test(x)) {
+                    var xv = parseFloat(x);
+                    if (xv <= 0) {
+                        x = (xv - extra) + 'px'; changed = true;
+                    } else if (xv >= vw * 0.8) {
+                        x = (xv + extra) + 'px'; changed = true;
                     }
-                    cur = cur.parentElement;
                 }
+                return x + ' ' + y;
+            });
+
+            if (changed) {
+                el.style.setProperty('clip-path', 'polygon(' + newPoints.join(', ') + ')', 'important');
             }
-
-            if (!el || el === document.body) return;
-
-            // Calculer l'extension nécessaire selon le skew
-            // On prend au moins 50vw pour couvrir n'importe quel angle
-            var vw = window.innerWidth || document.documentElement.clientWidth || 1440;
-            var extra = Math.round(vw * 0.5); // 50vw garanti
-            var cs = window.getComputedStyle(el);
-            var t = cs.transform || '';
-            if (t && t !== 'none') {
-                var m = t.match(/matrix\(([^)]+)\)/);
-                if (m) {
-                    var v = m[1].split(',').map(parseFloat);
-                    var h = el.offsetHeight;
-                    // b = tan(skewY), c = tan(skewX)
-                    var calculated = Math.ceil(Math.max(Math.abs(v[1]), Math.abs(v[2])) * h) + 80;
-                    extra = Math.max(extra, calculated);
-                }
-            }
-
-            el.style.setProperty('margin-left',  '-' + extra + 'px', 'important');
-            el.style.setProperty('margin-right', '-' + extra + 'px', 'important');
-            el.style.setProperty('width', 'calc(100% + ' + (extra * 2) + 'px)', 'important');
-            el.style.setProperty('box-sizing', 'border-box', 'important');
-            el.style.setProperty('padding-left',  extra + 'px', 'important');
-            el.style.setProperty('padding-right', extra + 'px', 'important');
-
-            // Clipper UNIQUEMENT sur body pour éviter la scrollbar horizontale
-            // sans toucher aux conteneurs Elementor intermédiaires
-            document.body.style.setProperty('overflow-x', 'hidden', 'important');
+            // Si les valeurs sont en %, le scaling CSS s'en charge automatiquement.
         }
 
         /* ─────────────────────────────────────────────
-         * 2. Remplace le Swiper par une animation CSS
-         *    continue et sans saut (2 copies du contenu
-         *    → translateX 0% à -50% en boucle infinie)
+         * Remplace le Swiper par une animation CSS continue
          * ───────────────────────────────────────────── */
         function makeMarquee(sliderEl) {
             if (sliderEl.classList.contains('dmm-marquee-ready')) return;
@@ -130,18 +130,15 @@ add_action( 'wp_footer', function () {
             var swiperEl = sliderEl.querySelector('.ekit-main-swiper');
             if (!swiperEl) return;
 
-            // Récupérer uniquement les slides originaux (sans les duplicatas Swiper)
             var originalSlides = Array.from(
                 sliderEl.querySelectorAll('.swiper-slide:not(.swiper-slide-duplicate)')
             );
             if (originalSlides.length === 0) return;
 
-            // Détruire l'instance Swiper
             if (swiperEl.swiper) {
                 try { swiperEl.swiper.destroy(true, true); } catch (e) {}
             }
 
-            // Construire le track avec 2 copies pour boucle seamless
             var track = document.createElement('div');
             track.className = 'dmm-marquee-track';
 
@@ -149,35 +146,29 @@ add_action( 'wp_footer', function () {
                 var set = document.createElement('div');
                 set.className = 'dmm-marquee-set';
                 originalSlides.forEach(function (slide) {
-                    var item = document.createElement('div');
+                    var item  = document.createElement('div');
                     item.className = 'dmm-slide-item';
                     var inner = slide.querySelector('.swiper-slide-inner');
-                    if (inner) {
-                        item.innerHTML = inner.innerHTML;
-                    }
+                    if (inner) item.innerHTML = inner.innerHTML;
                     set.appendChild(item);
                 });
                 track.appendChild(set);
             }
 
-            // Remplacer le contenu Swiper
             swiperEl.innerHTML = '';
             swiperEl.appendChild(track);
             swiperEl.style.overflow = 'hidden';
-            swiperEl.style.width = '100%';
-
+            swiperEl.style.width    = '100%';
             sliderEl.classList.add('dmm-marquee-ready');
 
-            // Calculer la durée après rendu réel du DOM
             requestAnimationFrame(function () {
                 requestAnimationFrame(function () {
-                    var set1 = track.querySelector('.dmm-marquee-set');
+                    var set1     = track.querySelector('.dmm-marquee-set');
                     var setWidth = set1 ? set1.scrollWidth : 2000;
                     if (!setWidth || setWidth < 100) setWidth = 2000;
 
-                    // Keyframes uniques pour éviter les conflits
                     var kfName = 'dmmEkitLoop' + Date.now();
-                    var style = document.createElement('style');
+                    var style  = document.createElement('style');
                     style.textContent =
                         '@keyframes ' + kfName + ' {' +
                         '  from { transform: translateX(0); }' +
@@ -185,45 +176,35 @@ add_action( 'wp_footer', function () {
                         '}';
                     document.head.appendChild(style);
 
-                    // Vitesse ~80 px/s — naturelle pour un bandeau logos
                     var duration = (setWidth / 80).toFixed(2);
                     track.style.animation = kfName + ' ' + duration + 's linear infinite';
 
-                    // Corriger le fond incliné après reconstruction du DOM
-                    fixInclinedBg(sliderEl);
+                    // Corriger le clip-path si nécessaire
+                    fixClipPath(sliderEl);
                 });
             });
         }
 
-        /* ─────────────────────────────────────────────
-         * Surveillance : déclencher dès que le Swiper
-         * ElementsKit est initialisé
-         * ───────────────────────────────────────────── */
         function scanAndFix() {
             document.querySelectorAll(
                 '.elementskit-clients-slider:not(.dmm-marquee-ready)'
             ).forEach(function (el) {
-                // Attendre que Swiper ait créé les classes swiper-initialized
                 if (el.querySelector('.swiper-initialized')) {
                     makeMarquee(el);
                 }
             });
         }
 
-        // Polling pendant 20s max
         var attempts = 0;
         var poll = setInterval(function () {
             scanAndFix();
             if (++attempts >= 40) clearInterval(poll);
         }, 500);
 
-        // Observer les changements de classe (Elementor lazy-load)
         new MutationObserver(function () {
             scanAndFix();
         }).observe(document.body, {
-            subtree: true,
-            attributes: true,
-            attributeFilter: ['class']
+            subtree: true, attributes: true, attributeFilter: ['class']
         });
 
     })();
