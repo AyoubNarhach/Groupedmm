@@ -1532,12 +1532,12 @@ class ElementsKit_Widget_Client_Logo extends Widget_Base {
             'rtl'				=> is_rtl(),
             'arrows'			=> !empty($settings['ekit_client_logo_show_arrow']),
             'dots'				=> !empty($settings['ekit_client_logo_show_dot']),
-            'autoplay'			=> !empty($settings['ekit_client_logo_autoplay']),
+            'autoplay'			=> !empty($settings['ekit_client_logo_autoplay']) ? [ 'delay' => 3000, 'disableOnInteraction' => false, 'pauseOnMouseEnter' => !empty($settings['ekit_client_logo_pause_on_hover']) ] : false,
             'speed'				=> !empty($settings['ekit_client_logo_speed']) ? $settings['ekit_client_logo_speed'] : 1000,
             'slidesPerView'		=> !empty($settings['ekit_client_logo_slidetosho']['size']) ? $settings['ekit_client_logo_slidetosho']['size'] : 4,
             'slidesPerGroup'	=> !empty($settings['ekit_client_logo_slidesToScroll']['size']) ? $settings['ekit_client_logo_slidesToScroll']['size'] : 1,
             'pauseOnHover'		=> !empty($settings['ekit_client_logo_pause_on_hover']),
-            'loop'				=> ( !empty($ekit_client_logo_loop) && $ekit_client_logo_loop == 'yes' && !empty($ekit_client_logo_rows) && $ekit_client_logo_rows == 1 ) ? true : false,
+            'loop'				=> true,
             'breakpoints'		=> [
                 320 => [
                     'slidesPerView'		=> !empty($settings['ekit_client_logo_slidetosho_mobile']['size']) ? $settings['ekit_client_logo_slidetosho_mobile']['size'] : 1,
