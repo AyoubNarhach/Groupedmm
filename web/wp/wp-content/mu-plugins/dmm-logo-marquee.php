@@ -12,17 +12,15 @@ add_action( 'wp_head', function () {
         body { overflow-x: hidden !important; }
 
         /* ── Extension plein écran de la section inclinée ──
-         * margin négatif + padding compensatoire = fond couvre tout
-         * le viewport sans réduire la zone de contenu.
-         * box-sizing:border-box garantit que la largeur inclut le padding.
+         * 50vw de chaque côté pour couvrir tout cas (clip-path ou transform).
          */
         .incline2 {
-            margin-left:  -40vw !important;
-            margin-right: -40vw !important;
-            width:        calc(100% + 80vw) !important;
+            margin-left:  -50vw !important;
+            margin-right: -50vw !important;
+            width:        calc(100% + 100vw) !important;
             box-sizing:   border-box !important;
-            padding-left:  40vw !important;
-            padding-right: 40vw !important;
+            padding-left:  50vw !important;
+            padding-right: 50vw !important;
             max-width:    none !important;
         }
 
@@ -75,35 +73,27 @@ add_action( 'wp_footer', function () {
 
         /* ─────────────────────────────────────────────
          * Fix clip-path si la section inclinée en utilise un
-         * (en plus du CSS, on étend le polygon pour qu'il couvre
-         * la nouvelle largeur étendue)
          * ───────────────────────────────────────────── */
         function fixClipPath(sliderEl) {
             var el = sliderEl.closest ? sliderEl.closest('.incline2') : null;
             if (!el) return;
 
-            var cs      = window.getComputedStyle(el);
-            var clip    = cs.clipPath || cs.webkitClipPath || 'none';
+            var cs   = window.getComputedStyle(el);
+            var clip = cs.clipPath || cs.webkitClipPath || 'none';
             if (!clip || clip === 'none' || clip.indexOf('polygon') === -1) return;
 
-            // Le polygon utilise probablement des % → il scale avec la largeur étendue.
-            // Mais si les X sont en pixels résolus, il faut les étendre manuellement.
             var vw    = window.innerWidth || 1440;
-            var extra = Math.round(vw * 0.4);
+            var extra = Math.round(vw * 0.5);
 
             var m = clip.match(/polygon\((.+)\)/);
             if (!m) return;
 
-            // Séparer les points (chaque point = "X Y" séparé par une virgule)
-            var points = m[1].split(',').map(function (p) { return p.trim(); });
+            var points  = m[1].split(',').map(function (p) { return p.trim(); });
             var changed = false;
             var newPoints = points.map(function (p) {
-                // Chaque point : premier token = X, reste = Y
                 var parts = p.match(/^(\S+)\s+(.+)$/);
                 if (!parts) return p;
                 var x = parts[1], y = parts[2];
-
-                // Si X est en pixels et proche de 0 → étendre à gauche
                 if (/^-?[\d.]+px$/.test(x)) {
                     var xv = parseFloat(x);
                     if (xv <= 0) {
@@ -118,7 +108,6 @@ add_action( 'wp_footer', function () {
             if (changed) {
                 el.style.setProperty('clip-path', 'polygon(' + newPoints.join(', ') + ')', 'important');
             }
-            // Si les valeurs sont en %, le scaling CSS s'en charge automatiquement.
         }
 
         /* ─────────────────────────────────────────────
@@ -139,10 +128,30 @@ add_action( 'wp_footer', function () {
                 try { swiperEl.swiper.destroy(true, true); } catch (e) {}
             }
 
+            /* ── Mesure la largeur d'un set AVANT insertion dans le DOM ── */
+            var probe = document.createElement('div');
+            probe.style.cssText = 'position:absolute;top:-9999px;left:-9999px;display:flex;flex-wrap:nowrap;visibility:hidden;';
+            originalSlides.forEach(function (slide) {
+                var item  = document.createElement('div');
+                item.style.cssText = 'flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0 20px;';
+                var inner = slide.querySelector('.swiper-slide-inner');
+                if (inner) item.innerHTML = inner.innerHTML;
+                probe.appendChild(item);
+            });
+            document.body.appendChild(probe);
+            var setWidth = probe.scrollWidth || 2000;
+            document.body.removeChild(probe);
+            if (setWidth < 100) setWidth = 2000;
+
+            /* ── Calcule le nombre de copies pour couvrir 3× la largeur visible ── */
+            var containerWidth = swiperEl.offsetWidth || window.innerWidth || 1440;
+            var copies = Math.max(3, Math.ceil((containerWidth * 3) / setWidth) + 1);
+
+            /* ── Construit le track ── */
             var track = document.createElement('div');
             track.className = 'dmm-marquee-track';
 
-            for (var copy = 0; copy < 2; copy++) {
+            for (var c = 0; c < copies; c++) {
                 var set = document.createElement('div');
                 set.className = 'dmm-marquee-set';
                 originalSlides.forEach(function (slide) {
@@ -161,28 +170,20 @@ add_action( 'wp_footer', function () {
             swiperEl.style.width    = '100%';
             sliderEl.classList.add('dmm-marquee-ready');
 
-            requestAnimationFrame(function () {
-                requestAnimationFrame(function () {
-                    var set1     = track.querySelector('.dmm-marquee-set');
-                    var setWidth = set1 ? set1.scrollWidth : 2000;
-                    if (!setWidth || setWidth < 100) setWidth = 2000;
+            /* ── Anime : translateX(0) → translateX(-setWidthpx) pour un loop exact ── */
+            var kfName = 'dmmEkitLoop' + Date.now();
+            var style  = document.createElement('style');
+            style.textContent =
+                '@keyframes ' + kfName + ' {' +
+                '  from { transform: translateX(0px); }' +
+                '  to   { transform: translateX(-' + setWidth + 'px); }' +
+                '}';
+            document.head.appendChild(style);
 
-                    var kfName = 'dmmEkitLoop' + Date.now();
-                    var style  = document.createElement('style');
-                    style.textContent =
-                        '@keyframes ' + kfName + ' {' +
-                        '  from { transform: translateX(0); }' +
-                        '  to   { transform: translateX(-50%); }' +
-                        '}';
-                    document.head.appendChild(style);
+            var duration = (setWidth / 80).toFixed(2);
+            track.style.animation = kfName + ' ' + duration + 's linear infinite';
 
-                    var duration = (setWidth / 80).toFixed(2);
-                    track.style.animation = kfName + ' ' + duration + 's linear infinite';
-
-                    // Corriger le clip-path si nécessaire
-                    fixClipPath(sliderEl);
-                });
-            });
+            fixClipPath(sliderEl);
         }
 
         function scanAndFix() {
