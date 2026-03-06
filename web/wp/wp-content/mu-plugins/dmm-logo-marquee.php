@@ -114,18 +114,9 @@ add_action( 'wp_footer', function () {
             el.style.setProperty('padding-left',  extra + 'px', 'important');
             el.style.setProperty('padding-right', extra + 'px', 'important');
 
-            // Masquer le débordement sur TOUS les ancêtres jusqu'au body
-            var parent = el.parentElement;
-            while (parent && parent !== document.body) {
-                var pos = window.getComputedStyle(parent).position;
-                // Seulement sur les éléments positionnés ou la section Elementor
-                if (pos === 'relative' || pos === 'absolute' || pos === 'fixed' ||
-                    parent.classList.contains('e-con') ||
-                    parent.classList.contains('elementor-section')) {
-                    parent.style.overflow = 'hidden';
-                }
-                parent = parent.parentElement;
-            }
+            // Clipper UNIQUEMENT sur body pour éviter la scrollbar horizontale
+            // sans toucher aux conteneurs Elementor intermédiaires
+            document.body.style.setProperty('overflow-x', 'hidden', 'important');
         }
 
         /* ─────────────────────────────────────────────
