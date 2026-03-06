@@ -45,5 +45,5 @@ function mtnc_update()
       $settings[$key] = $value;
     }
   }
-  update_option('maintenance_options', $options);
+  update_option('maintenance_options', $settings);
 }

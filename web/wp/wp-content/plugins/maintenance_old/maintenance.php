@@ -191,7 +191,7 @@ class MTNC
 
   public function mtnc_constants()
   {
-    define('MTNC_VERSION', '4.06');
+    define('MTNC_VERSION', '4.20');
     define('MTNC_DB_VERSION', 2);
     define('MTNC_WP_VERSION', get_bloginfo('version'));
     define('MTNC_DIR', trailingslashit(plugin_dir_path(__FILE__)));
