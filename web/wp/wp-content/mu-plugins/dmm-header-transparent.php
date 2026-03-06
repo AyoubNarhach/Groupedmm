@@ -7,18 +7,30 @@
 add_action( 'wp_head', function () {
     ?>
     <style id="dmm-header-transparent">
-        /* Header: transparent au top, noir solide au scroll */
-        .top_panel .sc_layouts_row:not(.sc_layouts_row_fixed_on) {
-            background-color: transparent !important;
-            -webkit-transition: background-color 0.3s ease;
-            transition: background-color 0.3s ease;
-        }
-        .sc_layouts_row_fixed_on {
-            background-color: #000000 !important;
-        }
-        /* Assure que le top_panel lui-même n'a pas de fond opaque au top */
+        /*
+         * DMM Header:
+         * - Transparent au sommet de la page (classe .header = pas encore scrollé)
+         * - Fond noir #000 quand scrollé (classe .she-header = sticky actif)
+         *
+         * Le plugin "Sticky Header Effects for Elementor" bascule entre
+         * .header (top) et .she-header (scrollé) sur .she-header-yes
+         */
+
+        /* Au top : transparent, toutes les couches Elementor et Modernee */
+        .she-header-yes:not(.she-header),
+        .she-header-yes.header,
+        .she-header-yes.header .elementor-section,
+        .she-header-yes.header .e-con,
+        .top_panel .sc_layouts_row:not(.sc_layouts_row_fixed_on),
         body:not(.trx_addons_page_scrolled) .top_panel {
             background-color: transparent !important;
+            background-image: none !important;
+        }
+
+        /* Quand scrollé : fond noir solide */
+        .she-header-yes.she-header,
+        .sc_layouts_row_fixed_on {
+            background-color: #000000 !important;
         }
     </style>
     <?php
