@@ -18,67 +18,72 @@ body { overflow-x: hidden !important; }
     max-width:    none !important;
 }
 </style>
+<?php }, 5 );
 
-<!-- Patch data-config AVANT que jQuery/ElementsKit le mette en cache -->
+/*
+ * ── COUCHE 1 (priority 1) ─────────────────────────────────────────────
+ * S'exécute AVANT tous les scripts enqueued (Elementor, ElementsKit)
+ * car wp_print_footer_scripts() est à priority 20.
+ *
+ * On surcharge jQuery.fn.data() dans la ready-queue de jQuery.
+ * Notre callback est enregistré EN PREMIER → s'exécute EN PREMIER.
+ * Quand ElementsKit appelle ensuite e.find('…').data('config'),
+ * notre override est déjà en place et injecte loop:true.
+ */
+add_action( 'wp_footer', function () { ?>
 <script>
-(function patchEarlyConfig() {
-    function patch() {
-        document.querySelectorAll('.elementskit-clients-slider[data-config]').forEach(function (el) {
-            if (el.dataset.dmmPatched) return;
-            try {
-                var cfg = JSON.parse(el.getAttribute('data-config'));
-                cfg.loop         = true;
-                cfg.pauseOnHover = false;
-                if (!cfg.autoplay || cfg.autoplay === true) {
-                    cfg.autoplay = { delay: 0, disableOnInteraction: false, pauseOnMouseEnter: false };
-                } else {
-                    cfg.autoplay.disableOnInteraction = false;
-                    cfg.autoplay.pauseOnMouseEnter    = false;
-                }
-                el.setAttribute('data-config', JSON.stringify(cfg));
-                el.dataset.dmmPatched = '1';
-            } catch (e) {}
-        });
-    }
-    /* Enregistré dans <head>, avant tout script footer → first in queue */
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', patch);
-    } else {
-        patch();
-    }
-})();
+jQuery(function ($) {
+    var _orig = $.fn.data;
+    $.fn.data = function (key) {
+        var res = _orig.apply(this, arguments);
+        if (
+            key === 'config' &&
+            arguments.length === 1 &&
+            res && typeof res === 'object' &&
+            this[0] && this[0].classList &&
+            this[0].classList.contains('elementskit-clients-slider')
+        ) {
+            /* Force loop infini + désactive tous les arrêts */
+            res.loop         = true;
+            res.pauseOnHover = false;
+            if (res.autoplay === true) {
+                res.autoplay = { delay: 2000, disableOnInteraction: false, pauseOnMouseEnter: false };
+            } else if (res.autoplay && typeof res.autoplay === 'object') {
+                res.autoplay.disableOnInteraction = false;
+                res.autoplay.pauseOnMouseEnter    = false;
+            }
+        }
+        return res;
+    };
+});
 </script>
-<?php }, 1 );
+<?php }, 1 );  /* ← priority 1, avant wp_print_footer_scripts() à priority 20 */
 
-/* ── JS footer : filet de sécurité si Swiper est quand même arrêté ──── */
+/*
+ * ── COUCHE 2 (priority 25) ────────────────────────────────────────────
+ * Filet de sécurité après l'init Swiper :
+ * - bloque sw.autoplay.stop() sur l'instance Swiper
+ * - redémarre toutes les 500 ms si arrêt inattendu
+ */
 add_action( 'wp_footer', function () { ?>
 <script>
 (function () {
-    function ensureRunning() {
+    function fix() {
         document.querySelectorAll('.elementskit-clients-slider').forEach(function (slider) {
             var el = slider.querySelector('.ekit-main-swiper, .swiper-container, .swiper');
             if (!el || !el.swiper) return;
             var sw = el.swiper;
 
-            /* Bloque stop() une seule fois */
-            if (!sw._dmmNoStop) {
-                sw._dmmNoStop = true;
-                var origStop   = sw.autoplay.stop.bind(sw.autoplay);
-                sw.autoplay.stop = function () {
-                    /* Autorise l'arrêt uniquement si Swiper est détruit */
-                    if (sw.destroyed) origStop();
-                };
+            if (!sw._dmmFixed) {
+                sw._dmmFixed      = true;
+                sw.autoplay.stop  = function () {}; /* noop */
             }
-
-            if (sw.autoplay && !sw.autoplay.running) {
-                sw.autoplay.start();
-            }
+            if (!sw.autoplay.running) sw.autoplay.start();
         });
     }
-
-    /* Lance dès que Swiper est prêt, puis surveille toutes les 500 ms */
-    var t = setInterval(ensureRunning, 500);
-    setTimeout(function () { clearInterval(t); }, 30000);
+    /* Démarre dès que Swiper est prêt, tourne 60 s */
+    var t = setInterval(fix, 500);
+    setTimeout(function () { clearInterval(t); }, 60000);
 })();
 </script>
-<?php }, 20 );
+<?php }, 25 );
