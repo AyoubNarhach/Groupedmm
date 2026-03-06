@@ -24,24 +24,32 @@ body { overflow-x: hidden !important; }
 add_action( 'wp_footer', function () { ?>
 <script>
 (function () {
+
+    /* ElementsKit initialise Swiper sur .ekit-main-swiper (pas sur .elementskit-clients-slider).
+     * On récupère l'instance via swiperEl.swiper, on bloque stop(), et on active le loop. */
     function fix(slider) {
         if (slider.dataset.dmmFixed) return;
-        if (!slider.classList.contains('swiper-initialized')) return;
-        var sw = slider.swiper;
+
+        var swiperEl = slider.querySelector('.ekit-main-swiper') ||
+                       slider.querySelector('.swiper-container') ||
+                       slider.querySelector('.swiper');
+        if (!swiperEl || !swiperEl.classList.contains('swiper-initialized')) return;
+
+        var sw = swiperEl.swiper;
         if (!sw) return;
 
         slider.dataset.dmmFixed = '1';
 
-        /* Défilement continu : délai 0, vitesse de transition douce */
-        sw.params.loop                          = true;
-        sw.params.speed                         = 4000;
-        sw.params.autoplay                      = sw.params.autoplay || {};
-        sw.params.autoplay.delay                = 0;
-        sw.params.autoplay.disableOnInteraction = false;
-        sw.params.autoplay.pauseOnMouseEnter    = false;
+        /* 1. Bloquer tout appel externe à autoplay.stop() (hover, fin de liste, etc.) */
+        sw.autoplay.stop = function () {};
 
-        try { sw.loopDestroy(); sw.loopCreate(); } catch (e) {}
-        sw.update();
+        /* 2. Activer le loop pour éviter l'arrêt en fin de liste */
+        if (!sw.params.loop) {
+            sw.params.loop = true;
+            try { sw.loopCreate(); sw.update(); } catch (e) {}
+        }
+
+        /* 3. Démarrer / relancer l'autoplay */
         sw.autoplay.start();
     }
 
@@ -49,17 +57,12 @@ add_action( 'wp_footer', function () { ?>
         document.querySelectorAll('.elementskit-clients-slider').forEach(fix);
     }
 
-    /* Polling jusqu'à init Swiper */
     var t = setInterval(scan, 300);
     setTimeout(function () { clearInterval(t); }, 15000);
 
-    /* Relance autoplay si jamais il s'arrête */
-    setInterval(function () {
-        document.querySelectorAll('.elementskit-clients-slider').forEach(function (slider) {
-            var sw = slider.swiper;
-            if (sw && sw.autoplay && !sw.autoplay.running) sw.autoplay.start();
-        });
-    }, 1000);
+    new MutationObserver(scan).observe(document.body, {
+        childList: true, subtree: true, attributes: true, attributeFilter: ['class']
+    });
 })();
 </script>
 <?php }, 20 );
