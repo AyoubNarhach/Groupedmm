@@ -10,52 +10,28 @@ add_action( 'wp_footer', function () {
     (function () {
         'use strict';
 
-        function dmmInitHeader() {
-            // Selectionne le header (top_panel = Modernee, .she-header-yes = SHE plugin)
-            var header = document.querySelector('header.top_panel, .she-header-yes');
-            if (!header) return;
+        // L'element Elementor du header sticky (data-id="26b0e58")
+        // Le background Elementor est appliqué sur le container et son .e-con-inner
+        var header = document.querySelector('.elementor-element-26b0e58');
+        if (!header) return;
 
-            function setTransparent() {
-                header.style.setProperty('background-color', 'transparent', 'important');
-                header.style.setProperty('background-image', 'none', 'important');
-                // Aussi les sections Elementor internes
-                var sections = header.querySelectorAll('.elementor-section, .e-con');
-                sections.forEach(function(el) {
-                    el.style.setProperty('background-color', 'transparent', 'important');
-                    el.style.setProperty('background-image', 'none', 'important');
-                });
+        var inner = header.querySelector(':scope > .e-con-inner');
+
+        function apply(bgColor) {
+            header.style.setProperty('background-color', bgColor, 'important');
+            header.style.setProperty('background-image', 'none', 'important');
+            if (inner) {
+                inner.style.setProperty('background-color', bgColor, 'important');
+                inner.style.setProperty('background-image', 'none', 'important');
             }
-
-            function setSolidBlack() {
-                header.style.setProperty('background-color', '#000000', 'important');
-                // Les sections internes peuvent rester transparentes (le header porte la couleur)
-                var sections = header.querySelectorAll('.elementor-section, .e-con');
-                sections.forEach(function(el) {
-                    el.style.removeProperty('background-color');
-                    el.style.removeProperty('background-image');
-                });
-            }
-
-            function onScroll() {
-                if (window.pageYOffset > 10) {
-                    setSolidBlack();
-                } else {
-                    setTransparent();
-                }
-            }
-
-            // Appliquer immédiatement
-            onScroll();
-
-            // Écouter le scroll
-            window.addEventListener('scroll', onScroll, { passive: true });
         }
 
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', dmmInitHeader);
-        } else {
-            dmmInitHeader();
+        function onScroll() {
+            apply(window.pageYOffset > 10 ? '#000000' : 'transparent');
         }
+
+        onScroll();
+        window.addEventListener('scroll', onScroll, { passive: true });
     })();
     </script>
     <?php
