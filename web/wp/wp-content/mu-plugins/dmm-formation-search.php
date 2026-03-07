@@ -187,21 +187,40 @@ function dmm_formation_search_output() {
 	var ajaxurl      = '<?php echo $ajax_url; ?>';
 	var nonce        = '<?php echo esc_js( $nonce ); ?>';
 
-	/* ── Détection du champ de recherche (multi-plugins) ──────────── */
+	/* ── Détection du champ de recherche ─────────────────────────── */
 	function findInput() {
-		// 1. Filter Everything
-		var $el = $( '.wpc-search-field' ).first();
+		// 1. Elementor Search widget (nouveau)
+		var $el = $( '.e-search-input' ).first();
 		if ( $el.length ) return $el;
-		// 2. WordPress standard search (name="s")
-		$el = $( 'input[name="s"]' ).first();
+		// 2. Filter Everything
+		$el = $( '.wpc-search-field' ).first();
 		if ( $el.length ) return $el;
-		// 3. Elementor Search Form
+		// 3. WordPress standard (name="s")
+		$el = $( 'input[name="s"]' ).not( '[type="hidden"]' ).first();
+		if ( $el.length ) return $el;
+		// 4. Elementor Search Form classique
 		$el = $( '.elementor-search-form__input' ).first();
 		if ( $el.length ) return $el;
-		// 4. Fallback : placeholder contenant "formation"
+		// 5. Fallback : placeholder "formation"
 		return $( 'input' ).filter(function () {
 			return /formation/i.test( $( this ).attr( 'placeholder' ) || '' );
 		}).first();
+	}
+
+	/* ── Détection du conteneur formations ────────────────────────── */
+	function findContainer() {
+		var selectors = [
+			'.sc_item_posts_container',       // trx_sc_courses shortcode
+			'.elementor-posts-container',     // Elementor Posts widget
+			'.e-loop-inner-container',        // Elementor Loop Grid
+		];
+		for ( var i = 0; i < selectors.length; i++ ) {
+			var $el = $( selectors[ i ] ).first();
+			if ( $el.length ) return $el;
+		}
+		// Dernier recours : remonter depuis une carte .sc_courses_item
+		var $card = $( '.sc_courses_item' ).first();
+		return $card.length ? $card.parent() : $();
 	}
 
 	/* ── Init ─────────────────────────────────────────────────────── */
@@ -212,15 +231,15 @@ function dmm_formation_search_output() {
 		if ( ! $input.length ) return;
 
 		$form      = $input.closest( 'form' );
-		$container = $( '.sc_item_posts_container' ).first();
+		$container = findContainer();
 		if ( ! $container.length ) return;
 
 		initialized = true;
 
 		/*
-		 * Interception en phase de CAPTURE sur document.
-		 * Cela s'exécute avant tous les handlers jQuery (phase bubble),
-		 * y compris ceux de Filter Everything qui appelle form.submit().
+		 * Interception en phase de CAPTURE : s'exécute avant tous les
+		 * handlers jQuery (phase bubble), notamment ceux d'Elementor Search
+		 * et de Filter Everything qui déclenchent un rechargement de page.
 		 */
 		document.addEventListener( 'submit', function ( e ) {
 			if ( e.target === $form[0] ) {
@@ -230,18 +249,8 @@ function dmm_formation_search_output() {
 			}
 		}, true /* capture */ );
 
-		/*
-		 * Filter Everything intercepte aussi le 'change' sur .wpc-search-field
-		 * puis appelle form.submit() – on bloque ça aussi en capture.
-		 */
-		document.addEventListener( 'change', function ( e ) {
-			if ( $( e.target ).hasClass( 'wpc-search-field' ) ) {
-				e.stopPropagation(); // empêche FE de soumettre le form
-			}
-		}, true );
-
 		/* Recherche live (debounce 400 ms) */
-		$input.on( 'input keyup', function () {
+		$input.on( 'input', function () {
 			clearTimeout( searchTimer );
 			searchTimer = setTimeout( doSearch, 400 );
 		} );
