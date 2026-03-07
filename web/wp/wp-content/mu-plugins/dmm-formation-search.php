@@ -187,35 +187,64 @@ function dmm_formation_search_output() {
 	var ajaxurl      = '<?php echo $ajax_url; ?>';
 	var nonce        = '<?php echo esc_js( $nonce ); ?>';
 
+	/* ── Détection du champ de recherche (multi-plugins) ──────────── */
+	function findInput() {
+		// 1. Filter Everything
+		var $el = $( '.wpc-search-field' ).first();
+		if ( $el.length ) return $el;
+		// 2. WordPress standard search (name="s")
+		$el = $( 'input[name="s"]' ).first();
+		if ( $el.length ) return $el;
+		// 3. Elementor Search Form
+		$el = $( '.elementor-search-form__input' ).first();
+		if ( $el.length ) return $el;
+		// 4. Fallback : placeholder contenant "formation"
+		return $( 'input' ).filter(function () {
+			return /formation/i.test( $( this ).attr( 'placeholder' ) || '' );
+		}).first();
+	}
+
 	/* ── Init ─────────────────────────────────────────────────────── */
 	function init() {
 		if ( initialized ) return;
 
-		/* Cherche le champ de recherche "formation" */
-		$input = $('input').filter(function () {
-			return /formation/i.test( $(this).attr('placeholder') || '' );
-		}).first();
-
+		$input = findInput();
 		if ( ! $input.length ) return;
 
-		$form      = $input.closest('form');
-		$container = $('.sc_item_posts_container').first();
-
+		$form      = $input.closest( 'form' );
+		$container = $( '.sc_item_posts_container' ).first();
 		if ( ! $container.length ) return;
 
 		initialized = true;
 
-		/* Empêche la soumission classique (qui rechargerait la page) */
-		$form.on('submit', function (e) {
-			e.preventDefault();
-			doSearch();
-		});
+		/*
+		 * Interception en phase de CAPTURE sur document.
+		 * Cela s'exécute avant tous les handlers jQuery (phase bubble),
+		 * y compris ceux de Filter Everything qui appelle form.submit().
+		 */
+		document.addEventListener( 'submit', function ( e ) {
+			if ( e.target === $form[0] ) {
+				e.preventDefault();
+				e.stopPropagation();
+				doSearch();
+			}
+		}, true /* capture */ );
+
+		/*
+		 * Filter Everything intercepte aussi le 'change' sur .wpc-search-field
+		 * puis appelle form.submit() – on bloque ça aussi en capture.
+		 */
+		document.addEventListener( 'change', function ( e ) {
+			if ( $( e.target ).hasClass( 'wpc-search-field' ) ) {
+				e.stopPropagation(); // empêche FE de soumettre le form
+			}
+		}, true );
 
 		/* Recherche live (debounce 400 ms) */
-		$input.on('input', function () {
+		$input.on( 'input keyup', function () {
 			clearTimeout( searchTimer );
 			searchTimer = setTimeout( doSearch, 400 );
-		});
+		} );
 
 		/* Charge les filtres thématiques */
 		loadFilters();
